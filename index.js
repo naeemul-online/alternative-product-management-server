@@ -42,13 +42,21 @@ async function run() {
      // Insert the defined document into the "haiku" collection
     // const result = await haiku.insertOne(doc);
 
-    // save queries
+    // save queries from add queries form
     app.post('/add-queries', async(req, res)=> {
       const addQueriesData = req.body;
       const result = await productsCollection.insertOne(addQueriesData);
       res.send(result)
       
     })
+
+    // get all queries added by specified user by email
+    app.get('/products/:email', async(req, res) => {
+      const email = req.params.email
+      const query = {'user.email': email}
+      const result = await productsCollection.find(query).toArray()
+      res.send(result)
+     })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

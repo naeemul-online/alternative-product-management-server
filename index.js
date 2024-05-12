@@ -1,7 +1,7 @@
 const express = require("express");
 const cors = require("cors");
 require("dotenv").config();
-const { MongoClient, ServerApiVersion } = require("mongodb");
+const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 
 const app = express();
@@ -34,21 +34,20 @@ async function run() {
      // Connect to the "insertDB" database and access its "haiku" collection
      const productsCollection = client.db('productsDB').collection('product')
 
-     app.get('/products', async(req, res) => {
-      const result = await productsCollection.find().toArray()
-      res.send(result)
-     })
-
-     // Insert the defined document into the "haiku" collection
-    // const result = await haiku.insertOne(doc);
-
-    // save queries from add queries form
+      // save queries from add queries form
     app.post('/add-queries', async(req, res)=> {
       const addQueriesData = req.body;
       const result = await productsCollection.insertOne(addQueriesData);
       res.send(result)
       
     })
+
+    // get all queries in the queries routs
+     app.get('/products', async(req, res) => {
+      const result = await productsCollection.find().toArray()
+      res.send(result)
+     })
+
 
     // get all queries added by specified user by email
     app.get('/products/:email', async(req, res) => {
@@ -57,6 +56,19 @@ async function run() {
       const result = await productsCollection.find(query).toArray()
       res.send(result)
      })
+
+    // delete all queries data added by specified user by email
+    app.delete('/product/:id', async(req, res) => {
+      const id = req.params.id
+      const query = {_id: new ObjectId(id)}
+      const result = await productsCollection.deleteOne(query)
+      res.send(result)
+     })
+
+    
+   
+
+   
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

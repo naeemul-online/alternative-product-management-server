@@ -30,45 +30,65 @@ async function run() {
     // Connect the client to the server	(optional starting in v4.7)
     //   await client.connect();
 
+    // Connect to the "insertDB" database and access its "haiku" collection
+    const productsCollection = client.db("productsDB").collection("product");
 
-     // Connect to the "insertDB" database and access its "haiku" collection
-     const productsCollection = client.db('productsDB').collection('product')
-
-      // save queries from add queries form
-    app.post('/add-queries', async(req, res)=> {
+    // save queries from add queries form
+    app.post("/add-queries", async (req, res) => {
       const addQueriesData = req.body;
       const result = await productsCollection.insertOne(addQueriesData);
-      res.send(result)
-      
-    })
+      res.send(result);
+    });
 
     // get all queries in the queries routs
-     app.get('/products', async(req, res) => {
-      const result = await productsCollection.find().toArray()
-      res.send(result)
-     })
-
+    app.get("/products", async (req, res) => {
+      const result = await productsCollection.find().toArray();
+      res.send(result);
+    });
 
     // get all queries added by specified user by email
-    app.get('/products/:email', async(req, res) => {
-      const email = req.params.email
-      const query = {'user.email': email}
-      const result = await productsCollection.find(query).toArray()
-      res.send(result)
-     })
+    app.get("/products/:email", async (req, res) => {
+      const email = req.params.email;
+      const query = { "user.email": email };
+      const result = await productsCollection.find(query).toArray();
+      res.send(result);
+    });
+
+    // update queries added by specified user by email
+    app.get("/update/:id", async (req, res) => {
+      const id = req.params.id;
+      console.log(id);
+      const query = { _id: new ObjectId(id) };
+      const result = await productsCollection.findOne(query);
+      res.send(result);
+    });
+
+    // update queries added by specified user by email
+    app.put("/update/:id", async (req, res) => {
+      const query = { _id: new ObjectId(req.params.id) };
+      const formData = req.body;
+      const options = { upsert: true };
+
+      const updateDoc = {
+        $set: {
+          ...formData,
+        },
+      };
+      const result = await productsCollection.updateOne(
+        query,
+        updateDoc,
+        options
+      );
+      res.send(result);
+    });
 
     // delete all queries data added by specified user by email
-    app.delete('/product/:id', async(req, res) => {
-      const id = req.params.id
-      const query = {_id: new ObjectId(id)}
-      const result = await productsCollection.deleteOne(query)
-      res.send(result)
-     })
-
-    
-   
-
-   
+    app.delete("/product/:id", async (req, res) => {
+      const id = req.params.id;
+      const query = { _id: new ObjectId(id) };
+      const result = await productsCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

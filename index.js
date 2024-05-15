@@ -32,6 +32,7 @@ async function run() {
 
     // Connect to the "insertDB" database and access its "haiku" collection
     const productsCollection = client.db("productsDB").collection("product");
+    const recommendsCollection = client.db("productsDB").collection("recommend");
 
     // save queries from add queries form
     app.post("/add-queries", async (req, res) => {
@@ -57,7 +58,7 @@ async function run() {
     // update queries added by specified user by email
     app.get("/update/:id", async (req, res) => {
       const id = req.params.id;
-      console.log(id);
+      // console.log(id);
       const query = { _id: new ObjectId(id) };
       const result = await productsCollection.findOne(query);
       res.send(result);
@@ -89,6 +90,14 @@ async function run() {
       const result = await productsCollection.deleteOne(query);
       res.send(result);
     });
+
+
+    // save recommend data in database
+    app.post('/recommend', async(req, res) => {
+      const recommend= req.body;
+      const result = await(recommendsCollection).insertOne(recommend)
+      res.send(result);
+    })
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

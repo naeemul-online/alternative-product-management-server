@@ -53,7 +53,7 @@ async function run() {
       const query = { "user.email": email };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
-    });
+    });  
 
     // update queries added by specified user by email
     app.get("/update/:id", async (req, res) => {
@@ -98,6 +98,17 @@ async function run() {
       const result = await(recommendsCollection).insertOne(recommend)
       res.send(result);
     })
+
+      // get all queries added by specified user by email
+      app.get("/recommend/:email", async (req, res) => {
+        const email = req.params.email;
+        // console.log(email)
+        const query = { recommenderEmail: email };
+        // console.log(query)
+        const result = await recommendsCollection.find(query).toArray();
+        // console.log(result)
+        res.send(result);
+      });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

@@ -1,18 +1,38 @@
 const express = require("express");
 const cors = require("cors");
+const jwt = require("jsonwebtoken");
+const cookieParser = require("cookie-parser");
 require("dotenv").config();
 const { MongoClient, ServerApiVersion, ObjectId } = require("mongodb");
 const port = process.env.PORT || 5000;
 
 const app = express();
 const corsOptions = {
-  origin: "http://localhost:5173",
+  origin: ["http://localhost:5173", "https://apis-client-b6bf1.web.app"],
   credentials: true,
   optionSuccessStatus: 200,
 };
 
 app.use(cors(corsOptions)); // Pass the corsOptions object directly here
-app.use(express.json()); // Call express.json() as a function
+app.use(express.json());
+app.use(cookieParser()); // Call express.json() as a function
+
+// verify jwt middleware
+const verifyToken = (req, res, next) => {
+  const token = req.cookies.token;
+  if (!token) return res.status(401).send({ message: "Unauthorized access" });
+  if (token) {
+    jwt.verify(token, process.env.ACCESS_TOKEN_SECRET, (err, decoded) => {
+      if (err) {
+        console.log(err);
+        return res.status(401).send({ message: "Unauthorized access" });
+      }
+      // console.log(decoded);
+      req.user = decoded;
+      next();
+    });
+  }
+};
 
 const uri = `mongodb+srv://${process.env.DB_USER}:${process.env.DB_PASS}@cluster0.ml8mugs.mongodb.net/?retryWrites=true&w=majority&appName=Cluster0`;
 
@@ -32,7 +52,39 @@ async function run() {
 
     // Connect to the "insertDB" database and access its "haiku" collection
     const productsCollection = client.db("productsDB").collection("product");
-    const recommendsCollection = client.db("productsDB").collection("recommend");
+    const recommendsCollection = client
+      .db("productsDB")
+      .collection("recommend");
+
+    // console.log(process.env.ACCESS_TOKEN_SECRET)
+    // jwt generate
+    app.post("/jwt", async (req, res) => {
+      const user = req.body;
+      console.log(user);
+      const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET, {
+        expiresIn: "30d",
+      });
+
+      res
+        .cookie("token", token, {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+        })
+        .send({ success: true });
+    });
+
+    // clear token
+    app.get("/logout", (req, res) => {
+      res
+        .clearCookie("token", {
+          httpOnly: true,
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.NODE_ENV === "production" ? "none" : "strict",
+          maxAge: 0,
+        })
+        .send({ success: true });
+    });
 
     // save queries from add queries form
     app.post("/add-queries", async (req, res) => {
@@ -48,12 +100,17 @@ async function run() {
     });
 
     // get all queries added by specified user by email
-    app.get("/products/:email", async (req, res) => {
+    app.get("/products/:email", verifyToken, async (req, res) => {
+      const tokenEmail = req.user.email;
+
       const email = req.params.email;
+      if (tokenEmail !== email) {
+        return res.status(403).send({ message: "Forbidden access" });
+      }
       const query = { "user.email": email };
       const result = await productsCollection.find(query).toArray();
       res.send(result);
-    });  
+    });
 
     // update queries added by specified user by email
     app.get("/update/:id", async (req, res) => {
@@ -91,48 +148,47 @@ async function run() {
       res.send(result);
     });
 
-
     // save recommend data in database
-    app.post('/recommend', async(req, res) => {
-      const recommend= req.body;
-      const result = await(recommendsCollection).insertOne(recommend)
+    app.post("/recommend", verifyToken, async (req, res) => {
+      const recommend = req.body;
+      const result = await recommendsCollection.insertOne(recommend);
       res.send(result);
-    })
+    });
 
-      // get all queries added by specified user by email to show in the comment section
-      app.get("/recommend/:email", async (req, res) => {
-        const email = req.params.email;
-        // console.log(email)
-        const query = { recommenderEmail: email };
-        // console.log(query)
-        const result = await recommendsCollection.find(query).toArray();
-        // console.log(result)
-        res.send(result);
-      });
+    // get all queries added by specified user by email to show in the comment section
+    app.get("/recommend/:email", async (req, res) => {
+      const email = req.params.email;
+      // console.log(email)
+      const query = { recommenderEmail: email };
+      // console.log(query)
+      const result = await recommendsCollection.find(query).toArray();
+      // console.log(result)
+      res.send(result);
+    });
 
-      // get all queries to see recommendation for me page by email
-      app.get("/recommendForMe/:email", async (req, res) => {
-        const email = req.params.email;
-        // console.log(email)
-        const query = { userEmail: email };
-        // console.log(query)
-        const result = await recommendsCollection.find(query).toArray();
-        // console.log(result)
-        res.send(result);
-      });
+    // get all queries to see recommendation for me page by email
+    app.get("/recommendForMe/:email", async (req, res) => {
+      const email = req.params.email;
+      // console.log(email)
+      const query = { userEmail: email };
+      // console.log(query)
+      const result = await recommendsCollection.find(query).toArray();
+      // console.log(result)
+      res.send(result);
+    });
 
-        // delete recommend data added by specified user by email
+    // delete recommend data added by specified user by email
     app.delete("/my-recommend/:id", async (req, res) => {
       const id = req.params.id;
       // console.log(id)
       const query = { _id: new ObjectId(id) };
-      console.log(query)
+      console.log(query);
       const result = await recommendsCollection.deleteOne(query);
       res.send(result);
     });
 
     // Send a ping to confirm a successful connection
-    await client.db("admin").command({ ping: 1 });
+    // await client.db("admin").command({ ping: 1 });
     console.log(
       "Pinged your deployment. You successfully connected to MongoDB!"
     );

@@ -99,7 +99,7 @@ async function run() {
       res.send(result);
     })
 
-      // get all queries added by specified user by email
+      // get all queries added by specified user by email to show in the comment section
       app.get("/recommend/:email", async (req, res) => {
         const email = req.params.email;
         // console.log(email)
@@ -109,6 +109,27 @@ async function run() {
         // console.log(result)
         res.send(result);
       });
+
+      // get all queries to see recommendation for me page by email
+      app.get("/recommendForMe/:email", async (req, res) => {
+        const email = req.params.email;
+        // console.log(email)
+        const query = { userEmail: email };
+        // console.log(query)
+        const result = await recommendsCollection.find(query).toArray();
+        // console.log(result)
+        res.send(result);
+      });
+
+        // delete recommend data added by specified user by email
+    app.delete("/my-recommend/:id", async (req, res) => {
+      const id = req.params.id;
+      // console.log(id)
+      const query = { _id: new ObjectId(id) };
+      console.log(query)
+      const result = await recommendsCollection.deleteOne(query);
+      res.send(result);
+    });
 
     // Send a ping to confirm a successful connection
     await client.db("admin").command({ ping: 1 });

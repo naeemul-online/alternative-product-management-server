@@ -177,6 +177,15 @@ async function run() {
     app.post("/recommend",  async (req, res) => {
       const recommend = req.body;
       const result = await recommendsCollection.insertOne(recommend);
+
+      // update recommend count
+      const updateDoc={
+      $inc: {recommendationCount: 1}
+      }
+      const recommendQuery = {_id: new ObjectId(recommend.queryId)}
+      const updateRecommendCount = await productsCollection.updateOne(recommendQuery,updateDoc )
+      console.log(updateRecommendCount)
+
       res.send(result);
     });
 

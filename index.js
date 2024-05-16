@@ -174,7 +174,7 @@ async function run() {
     });
 
     // save recommend data in database
-    app.post("/recommend", verifyToken, async (req, res) => {
+    app.post("/recommend",  async (req, res) => {
       const recommend = req.body;
       const result = await recommendsCollection.insertOne(recommend);
       res.send(result);

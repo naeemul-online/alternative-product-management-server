@@ -8,7 +8,11 @@ const port = process.env.PORT || 5000;
 
 const app = express();
 const corsOptions = {
-  origin: ["http://localhost:5173", "https://apis-client-b6bf1.web.app"],
+  origin: [
+    "http://localhost:5173",
+    "https://apis-client-b6bf1.web.app",
+    "https://inspiring-kringle-fae69d.netlify.app",
+  ],
   credentials: true,
   optionSuccessStatus: 200,
 };
@@ -57,6 +61,27 @@ async function run() {
       .collection("recommend");
 
     // console.log(process.env.ACCESS_TOKEN_SECRET)
+    // -------------------------------
+    // //creating Token
+    // app.post("/jwt", logger, async (req, res) => {
+    //   const user = req.body;
+    //   console.log("user for token", user);
+    //   const token = jwt.sign(user, process.env.ACCESS_TOKEN_SECRET);
+
+    //   res.cookie("token", token, cookieOptions).send({ success: true });
+    // });
+
+    // //clearing Token
+    // app.post("/logout", async (req, res) => {
+    //   const user = req.body;
+    //   console.log("logging out", user);
+    //   res
+    //     .clearCookie("token", { ...cookieOptions, maxAge: 0 })
+    //     .send({ success: true });
+    // });
+
+    // ---------------------
+
     // jwt generate
     app.post("/jwt", async (req, res) => {
       const user = req.body;
